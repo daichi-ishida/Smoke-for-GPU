@@ -2,12 +2,7 @@
 #include "camera.h"
 #include "Smoke.h"
 
-#define GLFW_INCLUDE_GLU
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
+#include <thrust/device_vector.h>
 
 #include <memory>
 
@@ -20,14 +15,13 @@ struct Renderer
     void render();
     void saveImage();
 
-    GLuint pbo;
-    GLuint tex_buffer;
-    struct cudaGraphicsResource* cuda_pbo_resource;
+    thrust::host_vector<uchar3> h_image;
+    thrust::device_vector<uchar3> d_image;
 
-    std::unique_ptr<Smoke>& m_data;
+    std::unique_ptr<Smoke> &m_data;
     std::unique_ptr<Camera> host_camera;
 
-    cudaArray* cuda_density;
+    cudaArray *cuda_density;
 
 private:
     void bindDensityTexture();

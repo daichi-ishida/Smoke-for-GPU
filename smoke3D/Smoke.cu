@@ -34,7 +34,8 @@
 Smoke::Smoke()
     : dt(0.0f), t(0.0f), next_shutter_time(0.0f), isTimeToRender(false)
 {
-    dt = std::min(CFL * DX / INIT_VELOCITY, 1.0f / FPS);
+    //dt = std::min(CFL * DX / INIT_VELOCITY, 1.0f / FPS);
+    dt = DT;
 
     if (SAVE_VDB)
     {
@@ -306,10 +307,10 @@ void Smoke::initTemperature()
         int dy = j - (yRes - SOURCE_Y);
         int dz = k - SOURCE_Z;
         int r2 = dx * dx + dy * dy + dz * dz;
-        h_temperature0_scanline[offset] = T_AMBIENT;
+        h_temperature0_scanline[offset] = 0.0f;
         if (r2 < SOURCE_R * SOURCE_R)
         {
-            h_temperature0_scanline[offset] = T_AMP;
+            h_temperature0_scanline[offset] = INIT_TEMPERATURE;
         }
     }
 

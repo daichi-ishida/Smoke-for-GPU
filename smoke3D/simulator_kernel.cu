@@ -21,7 +21,7 @@ void calculateBuoyancy_k(const ScalarField densityField, const ScalarField tempe
     float density = densityField(x, y, z);
     float temperature = temperatureField(x, y, z);
 
-    float force = ALPHA * density - BETA * (temperature - T_AMBIENT);
+    float force = ALPHA * density - BETA * temperature;
 
     forceField(x, y, z) = force;
 }
@@ -80,6 +80,351 @@ void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, const
     }
 
     divergenceField(x, y, z) = divergence;
+}
+
+
+__global__
+void extrapolateU_k(uField src_u, const Obstacles obstacles, uField dst_u)
+{
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    int z = threadIdx.z + blockIdx.z * blockDim.z;
+
+    float sum_u = 0.0f;
+    int count = 0;
+    float avg_u;
+
+    uField *src_p = &src_u;
+    uField *dst_p = &dst_u;
+
+    for(int i = 0; i < 3; ++i)
+    {
+        if(z > 0) // front
+        {
+            sum_u += src_p->operator()(x, y, z-1);
+            ++count;
+        }
+        if(y > 0) // top
+        {
+            sum_u += src_p->operator()(x, y-1, z);
+            ++count;
+        }
+        if(x > 0) // left
+        {
+            sum_u += src_p->operator()(x-1, y, z);
+            ++count;
+        }
+    
+        //right
+        sum_u += src_p->operator()(x+1, y, z);
+        ++count;
+    
+        if(y < yRes - 1) // bottom
+        {
+            sum_u += src_p->operator()(x, y+1, z);
+            ++count;
+        }
+
+        if(z < zRes - 1) // back
+        {
+            sum_u += src_p->operator()(x, y, z+1);
+            ++count;
+        }
+    
+        avg_u = sum_u / (float)count;
+        
+        Index index(x, y, z);
+        if(obstacles.indexSampler(index.left()) || obstacles.indexSampler(index))
+        {
+            dst_p->operator()(x, y, z) = avg_u;
+        }
+        else
+        {
+            dst_p->operator()(x, y, z) = src_p->operator()(x, y, z);
+        }
+
+        sum_u = 0.0f;
+        count = 0;
+        if(x == 0) // 1 more line for u
+        {
+            Index index_edge(xRes, y, z);
+
+            if(z > 0) // front
+            {
+                sum_u += src_p->operator()(xRes, y, z-1);
+                ++count;
+            }
+    
+            if(y > 0) // top
+            {
+                sum_u += src_p->operator()(xRes, y-1, z);
+                ++count;
+            }
+
+            // left
+            sum_u += src_p->operator()(xRes-1, y, z);
+            ++count;
+    
+            if(y < yRes - 1) // bottom
+            {
+                sum_u += src_p->operator()(xRes, y+1, z);
+                ++count;
+            }
+
+            if(z < zRes - 1) // back
+            {
+                sum_u += src_p->operator()(xRes, y, z+1);
+                ++count;
+            }
+        
+            avg_u = sum_u / (float)count;
+        
+            if(obstacles.indexSampler(index_edge) || obstacles.indexSampler(index_edge.right()))
+            {
+                dst_p->operator()(xRes, y, z) = avg_u;
+            }
+            else
+            {
+                dst_p->operator()(xRes, y, z) = src_p->operator()(xRes, y, z);
+            }
+        }
+        __syncthreads();
+    
+        // swap src and dst
+        uField *tmp = src_p;
+        src_p = dst_p;
+        dst_p = tmp;
+    }
+}
+
+
+__global__
+void extrapolateV_k(vField src_v, const Obstacles obstacles, vField dst_v)
+{
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    int z = threadIdx.z + blockIdx.z * blockDim.z;
+
+    float sum_v = 0.0f;
+    int count = 0;
+    float avg_v;
+
+    vField *src_p = &src_v;
+    vField *dst_p = &dst_v;
+
+    for(int i = 0; i < 3; ++i)
+    {
+        if(z > 0) // front
+        {
+            sum_v += src_p->operator()(x, y, z-1);
+            ++count;
+        }
+        if(y > 0) // top
+        {
+            sum_v += src_p->operator()(x, y-1, z);
+            ++count;
+        }
+        if(x > 0) // left
+        {
+            sum_v += src_p->operator()(x-1, y, z);
+            ++count;
+        }
+    
+        if(x < xRes - 1) // right
+        {
+            sum_v += src_p->operator()(x+1, y, z);
+            ++count;
+        }
+
+        // bottom
+        sum_v += src_p->operator()(x, y+1, z);
+        ++count;
+
+        if(z < zRes - 1) // back
+        {
+            sum_v += src_p->operator()(x, y, z+1);
+            ++count;
+        }
+    
+        avg_v = sum_v / (float)count;
+        
+        Index index(x, y, z);
+        if(obstacles.indexSampler(index.top()) || obstacles.indexSampler(index))
+        {
+            dst_p->operator()(x, y, z) = avg_v;
+        }
+        else
+        {
+            dst_p->operator()(x, y, z) = src_p->operator()(x, y, z);
+        }
+
+        sum_v = 0.0f;
+        count = 0;
+        if(y == 0) // 1 more line for v
+        {
+            Index index_edge(x, yRes, z);
+    
+            if(z > 0) // front
+            {
+                sum_v += src_p->operator()(x, y, z-1);
+                ++count;
+            }
+
+            // top
+            sum_v += src_p->operator()(x, yRes-1, z);
+            ++count;
+
+            if(x > 0) // left
+            {
+                sum_v += src_p->operator()(x-1, yRes, z);
+                ++count;
+            }
+
+            if(x < xRes - 1) // right
+            {
+                sum_v += src_p->operator()(x+1, yRes, z);
+                ++count;
+            }
+
+            if(z < zRes - 1) // back
+            {
+                sum_v += src_p->operator()(x, yRes, z+1);
+                ++count;
+            }
+        
+            avg_v = sum_v / (float)count;
+        
+            if(obstacles.indexSampler(index_edge) || obstacles.indexSampler(index_edge.bottom()))
+            {
+                dst_p->operator()(x, yRes, z) = avg_v;
+            }
+            else
+            {
+                dst_p->operator()(x, yRes, z) = src_p->operator()(x, yRes, z);
+            }
+        }
+        __syncthreads();
+    
+        // swap src and dst
+        vField *tmp = src_p;
+        src_p = dst_p;
+        dst_p = tmp;
+    }
+}
+
+
+__global__
+void extrapolateW_k(wField src_w, const Obstacles obstacles, wField dst_w)
+{
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    int z = threadIdx.z + blockIdx.z * blockDim.z;
+
+    float sum_w = 0.0f;
+    int count = 0;
+    float avg_w;
+
+    wField *src_p = &src_w;
+    wField *dst_p = &dst_w;
+
+    for(int i = 0; i < 3; ++i)
+    {
+        if(z > 0) // front
+        {
+            sum_w += src_p->operator()(x, y, z-1);
+            ++count;
+        }
+        if(y > 0) // top
+        {
+            sum_w += src_p->operator()(x, y-1, z);
+            ++count;
+        }
+        if(x > 0) // left
+        {
+            sum_w += src_p->operator()(x-1, y, z);
+            ++count;
+        }
+    
+        if(x < xRes - 1) // right
+        {
+            sum_w += src_p->operator()(x+1, y, z);
+            ++count;
+        }
+
+        if(y < yRes - 1) // bottom
+        {
+            sum_w += src_p->operator()(x, y+1, z);
+            ++count;
+        }
+
+        // back
+        sum_w += src_p->operator()(x, y, z+1);
+        ++count;
+    
+        avg_w = sum_w / (float)count;
+        
+        Index index(x, y, z);
+        if(obstacles.indexSampler(index.front()) || obstacles.indexSampler(index))
+        {
+            dst_p->operator()(x, y, z) = avg_w;
+        }
+        else
+        {
+            dst_p->operator()(x, y, z) = src_p->operator()(x, y, z);
+        }
+
+        sum_w = 0.0f;
+        count = 0;
+        if(z == 0) // 1 more line for w
+        {
+            Index index_edge(x, y, zRes);
+    
+            // front
+            sum_w += src_p->operator()(x, y, zRes-1);
+            ++count;
+
+            if(y > 0) // top
+            {
+                sum_w += src_p->operator()(x, y-1, zRes);
+                ++count;
+            }
+
+            if(x > 0) // left
+            {
+                sum_w += src_p->operator()(x-1, y, zRes);
+                ++count;
+            }
+
+            if(x < xRes - 1) // right
+            {
+                sum_w += src_p->operator()(x+1, y, zRes);
+                ++count;
+            }
+
+            if(x < xRes - 1) // bottom
+            {
+                sum_w += src_p->operator()(x, y+1, zRes);
+                ++count;
+            }
+
+            avg_w = sum_w / (float)count;
+        
+            if(obstacles.indexSampler(index_edge) || obstacles.indexSampler(index_edge.back()))
+            {
+                dst_p->operator()(x, y, zRes) = avg_w;
+            }
+            else
+            {
+                dst_p->operator()(x, y, zRes) = src_p->operator()(x, y, zRes);
+            }
+        }
+        __syncthreads();
+    
+        // swap src and dst
+        wField *tmp = src_p;
+        src_p = dst_p;
+        dst_p = tmp;
+    }
 }
 
 __global__
@@ -394,13 +739,13 @@ void Simulator::decideTimeStep()
         m_data->setNextShutterTime();
     }
 
-    CALL_KERNEL(blockMaxSpeed, blocks, threads)(m_data->u0, m_data->v0, m_data->w0, m_data->d_speed.data());
-    cudaDeviceSynchronize();
-    float max_speed = thrust::reduce(thrust::device, m_data->d_speed.begin(), m_data->d_speed.end());
+    // CALL_KERNEL(blockMaxSpeed, blocks, threads)(m_data->u0, m_data->v0, m_data->w0, m_data->d_speed.data());
+    // cudaDeviceSynchronize();
+    // float max_speed = thrust::reduce(thrust::device, m_data->d_speed.begin(), m_data->d_speed.end());
 
-    float dt = CFL * DX / max_speed;
-    m_data->dt = dt;
-    printf("max_speed = %f, dt = %f\n", max_speed, dt);
+    // float dt = CFL * DX / max_speed;
+    // m_data->dt = dt;
+    // printf("max_speed = %f, dt = %f\n", max_speed, dt);
 }
 
 
@@ -412,6 +757,14 @@ void Simulator::update()
 
     // solve poisson equation with CG
     cg();
+
+    CALL_KERNEL(extrapolateU_k, blocks, threads)(m_data->u0, m_data->obstacles, m_data->u);
+    CALL_KERNEL(extrapolateV_k, blocks, threads)(m_data->v0, m_data->obstacles, m_data->v);
+    CALL_KERNEL(extrapolateW_k, blocks, threads)(m_data->w0, m_data->obstacles, m_data->w);
+
+    m_data->u0.swap(m_data->u);
+    m_data->v0.swap(m_data->v);
+    m_data->w0.swap(m_data->w);
 
     CALL_KERNEL(advectScalar_k, blocks, threads)(m_data->u0, m_data->v0, m_data->w0, m_data->density0, m_data->temperature0, m_data->density, m_data->temperature, m_data->dt);
 

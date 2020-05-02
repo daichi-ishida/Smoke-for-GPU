@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr int DIM = 128;
+constexpr int DIM = 512;
 constexpr int xRes = DIM;
 constexpr int yRes = DIM;
 constexpr float Scale = 1.0f;
@@ -17,6 +17,8 @@ constexpr float CFL = 2.0f;
 constexpr float DX = Scale / (float)DIM;
 constexpr float RHO = 1.29f;
 
+constexpr float DT = 0.004f;
+
 // ALPHA: gravity
 // BETA:  buoyancy
 constexpr float ALPHA = 9.8f;
@@ -28,9 +30,8 @@ constexpr int MAX_ITER = 5000;
 
 constexpr float INIT_DENSITY = 0.1f;
 constexpr float INIT_VELOCITY = 10.0f * DX;
+constexpr float INIT_TEMPERATURE = 30.0f;
 constexpr float INFLOW = 2.0f * DX;
-constexpr float T_AMP = 50.0f + 273.0f;
-constexpr float T_AMBIENT = 20.0f + 273.0f;
 
 constexpr int SOURCE_SIZE_X = (int)(DIM / 3);
 constexpr int SOURCE_SIZE_Y = (int)(DIM / 20);

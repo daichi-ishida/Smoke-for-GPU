@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smoke2D", "smoke2D\smoke2D.vcxproj", "{B73A853E-A5C9-4E08-A3B2-01E817665AB3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smoke3D", "smoke3D\smoke3D.vcxproj", "{BB8FC209-ACE9-466B-943B-D6FAD705EE2C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smoke3D", "smoke3D\smoke3D.vcxproj", "{A9417B06-181C-4303-800A-EE3F8656EEB1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{B73A853E-A5C9-4E08-A3B2-01E817665AB3}.Debug|x64.Build.0 = Debug|x64
 		{B73A853E-A5C9-4E08-A3B2-01E817665AB3}.Release|x64.ActiveCfg = Release|x64
 		{B73A853E-A5C9-4E08-A3B2-01E817665AB3}.Release|x64.Build.0 = Release|x64
-		{BB8FC209-ACE9-466B-943B-D6FAD705EE2C}.Debug|x64.ActiveCfg = Debug|x64
-		{BB8FC209-ACE9-466B-943B-D6FAD705EE2C}.Debug|x64.Build.0 = Debug|x64
-		{BB8FC209-ACE9-466B-943B-D6FAD705EE2C}.Release|x64.ActiveCfg = Release|x64
-		{BB8FC209-ACE9-466B-943B-D6FAD705EE2C}.Release|x64.Build.0 = Release|x64
+		{A9417B06-181C-4303-800A-EE3F8656EEB1}.Debug|x64.ActiveCfg = Debug|x64
+		{A9417B06-181C-4303-800A-EE3F8656EEB1}.Debug|x64.Build.0 = Debug|x64
+		{A9417B06-181C-4303-800A-EE3F8656EEB1}.Release|x64.ActiveCfg = Release|x64
+		{A9417B06-181C-4303-800A-EE3F8656EEB1}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

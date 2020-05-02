@@ -16,7 +16,7 @@ texture<float, 3, cudaReadModeElementType> densityTex;
 
 __constant__ Camera c_camera;
 
-__global__ void render_k(uchar4* d_output, const Obstacles obstacles)
+__global__ void render_k(uchar3* d_output, const Obstacles obstacles)
 {
     const float tstep = 2.0f / (float)DIM;
     float3 boxMin = make_float3(-1.0f, -2.0f, -1.0f);
@@ -137,59 +137,18 @@ __global__ void render_k(uchar4* d_output, const Obstacles obstacles)
     d_output[offset].x = Lo.x * 255;
     d_output[offset].y = Lo.y * 255;
     d_output[offset].z = Lo.z * 255;
-    d_output[offset].w = alpha * 255;
 }
 
 Renderer::~Renderer()
 {
-    if (pbo)
-    {
-        // unregister this buffer object from CUDA C
-        cudaGraphicsUnregisterResource(cuda_pbo_resource);
-        // delete old buffer
-        glDeleteBuffers(1, &pbo);
-        glDeleteTextures(1, &tex_buffer);
-    }
     unbindDensityTexture();
 }
 
 void Renderer::initialize()
 {
-    glEnable(GL_TEXTURE_2D);
-
-    if (pbo)
-    {
-        printf("unregister buffer...");
-        // unregister this buffer object from CUDA C
-        cudaGraphicsUnregisterResource(cuda_pbo_resource);
-        // delete old buffer
-        glDeleteBuffers(1, &pbo);
-        glDeleteTextures(1, &tex_buffer);
-        printf("Done\n");
-    }
-
-    printf("generating buffer...");
-
-    // create pixel buffer object for display
-    glGenBuffers(1, &pbo);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, WIN_WIDTH * WIN_HEIGHT * 4, 0, GL_DYNAMIC_DRAW_ARB);
-
-    // register this buffer object with CUDA
-    cudaGraphicsGLRegisterBuffer(&cuda_pbo_resource, pbo, cudaGraphicsMapFlagsWriteDiscard);
-
-    // create texture for display
-    glGenTextures(1, &tex_buffer);
-    glBindTexture(GL_TEXTURE_2D, tex_buffer);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WIN_WIDTH, WIN_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    getLastCudaError("Renderer initializing failed\n");
-    printf("Done\n");
+    // allocate image data
+    h_image.resize(WIN_WIDTH * WIN_HEIGHT);
+    d_image.resize(WIN_WIDTH * WIN_HEIGHT);
 
     printf("setting camera...");
     host_camera = std::make_unique<Camera>(9.0f, M_PIf / 9.0f, M_PIf / 2.0f, 30.0f * M_PIf / 180.0f);
@@ -201,58 +160,15 @@ void Renderer::initialize()
 
 void Renderer::render()
 {
-    // map PBO to get CUDA device pointer
-    uchar4* dev_ptr;
-    // map PBO to get CUDA device pointer
-    checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
-    size_t num_bytes;
-    checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&dev_ptr, &num_bytes, cuda_pbo_resource));
+    // call CUDA kernel, writing results
+    dim3 blocks((WIN_WIDTH+31)/32,(WIN_HEIGHT+31)/32);
+    dim3 render_threads(32,32);
 
-    // clear image
-    checkCudaErrors(cudaMemset(dev_ptr, 0, WIN_WIDTH * WIN_HEIGHT * 4));
-
-    // call CUDA kernel, writing results to PBO
-    dim3 blocks((WIN_WIDTH + 31) / 32, (WIN_HEIGHT + 31) / 32);
-    dim3 render_threads(32, 32);
-
+    // expand data for texture
     assignTexture();
 
-    CALL_KERNEL(render_k, blocks, render_threads)(dev_ptr, m_data->obstacles);
-
-    getLastCudaError("render failed\n");
-
-    checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_pbo_resource, 0));
-
-    // display results
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // draw image from PBO
-    glDisable(GL_DEPTH_TEST);
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    // glDrawPixels is slow so use texture instead
-
-    // copy from pbo to texture
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-    glBindTexture(GL_TEXTURE_2D, tex_buffer);
-
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIN_WIDTH, WIN_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-
-    // draw textured quad
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex2f(-1.0f, -1.0f);
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex2f(1.0f, -1.0f);
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex2f(1.0f, 1.0f);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex2f(-1.0f, 1.0f);
-    glEnd();
-
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // rendering
+    CALL_KERNEL(render_k, blocks, render_threads)(thrust::raw_pointer_cast(d_image.data()), m_data->obstacles);
 }
 
 void Renderer::bindDensityTexture()
@@ -280,7 +196,7 @@ void Renderer::assignTexture()
     cudaMemcpy3DParms parms = { 0 };
 
     parms.dstArray = cuda_density;
-    parms.srcPtr = make_cudaPitchedPtr(thrust::raw_pointer_cast(m_data->density0.data), sizeof(float) * xRes, xRes, yRes);
+    parms.srcPtr = make_cudaPitchedPtr(thrust::raw_pointer_cast(m_data->density0.data()), sizeof(float) * xRes, xRes, yRes);
     parms.extent = make_cudaExtent(xRes, yRes, zRes);
     parms.kind = cudaMemcpyDeviceToDevice;
     checkCudaErrors(cudaMemcpy3D(&parms));

@@ -14,8 +14,8 @@ int main()
     int step = 1; // simulation step counter
     int frame = 1; // rendered frame counter
 
-    Display display;
-    display.createWindow();
+    // Display display;
+    // display.createWindow();
 
     std::unique_ptr<Smoke> data{ std::make_unique<Smoke>() };
     std::unique_ptr<Simulator> simulator{ std::make_unique<Simulator>(data) };
@@ -30,7 +30,7 @@ int main()
 
     printf("\n*** SIMULATION START ***\n");
 
-    while (!display.isClosing() && frame <= END_FRAME)
+    while (frame <= END_FRAME)
     {
         printf("\n=== STEP %d : RENDERED %d ===\n", step, frame);
 
@@ -50,11 +50,11 @@ int main()
         }
 
         ++step;
-        display.updateWindow();
+        // display.updateWindow();
     }
     printf("\n*** SIMULATION END ***\n");
 
-    display.close();
+    // display.close();
 
     renderer.reset();
     data.reset();

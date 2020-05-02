@@ -6,13 +6,8 @@
 
 #include <cstdio>
 
-Renderer::Renderer(std::unique_ptr<Smoke>& data) : pbo(0), tex_buffer(0), cuda_pbo_resource(nullptr), m_data(data), cuda_density(nullptr)
+Renderer::Renderer(std::unique_ptr<Smoke> &data) : m_data(data), cuda_density(nullptr)
 {
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-    stbi_flip_vertically_on_write(1);
 }
 
 void Renderer::saveImage()
@@ -22,23 +17,9 @@ void Renderer::saveImage()
 
     snprintf(filename, sizeof(filename), "img/res%dx%dx%d_%04d.png", xRes, yRes, zRes, count++);
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    h_image = d_image;
 
-    int x = viewport[0];
-    int y = viewport[1];
-    int width = viewport[2];
-    int height = viewport[3];
+    unsigned char* data = reinterpret_cast<unsigned char*>(h_image.data()); // 3 components (R, G, B)
 
-    unsigned char* data = new unsigned char[width * height * 3]; // 3 components (R, G, B)
-
-    if (!data)
-        return;
-
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-    int saved = stbi_write_png(filename, width, height, 3, data, 0);
-
-    delete[] data;
+    int saved = stbi_write_png(filename, WIN_WIDTH, WIN_HEIGHT, 3, data, 0);
 }
