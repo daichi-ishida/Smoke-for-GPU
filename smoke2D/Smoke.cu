@@ -164,7 +164,7 @@ void Smoke::setObstacles()
         FOR_EACH_CELL
     {
         float r2 = ((static_cast<float>(i) + 0.5f) - COLLISION_CENTER_X)* ((static_cast<float>(i) + 0.5f) - COLLISION_CENTER_X) + ((static_cast<float>(j) + 0.5f) - COLLISION_CENTER_Y)* ((static_cast<float>(j) + 0.5f) - COLLISION_CENTER_Y);
-        h_scanline_obstacles[i + j * xRes] = (r2 < R2);
+        h_scanline_obstacles[i + j * xRes] = (r2 <= R2);
         //h_scanline_obstacles[i + j * xRes] = false;
     }
 

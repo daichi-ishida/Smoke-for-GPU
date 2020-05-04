@@ -12,6 +12,35 @@
 
 
 __global__
+void resetObstacles(const float cx, const float cy, Obstacles obstacles)
+{
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    int z = threadIdx.z + blockIdx.z * blockDim.z;
+
+    float global_x = x + 0.5f;
+    float global_y = y + 0.5f;
+    float global_z = z + 0.5f;
+
+    float dx = global_x - cx;
+    float dy = global_y - cy;
+    float dz = global_z - COLLISION_CENTER_Z;
+
+    float r2 = dx * dx + dy * dy + dz * dz;
+
+    int offset = x + (y + z * yRes) * xRes;
+    if(r2 <= R2)
+    {
+        obstacles.data[offset] = true;
+    }
+    else
+    {
+        obstacles.data[offset] = false;
+    }
+}
+
+
+__global__
 void calculateBuoyancy_k(const ScalarField densityField, const ScalarField temperatureField, ScalarField forceField)
 {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -42,7 +71,7 @@ void addForces_k(const ScalarField forceField, vField v, const float dt)
 }
 
 __global__
-void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, const wField w0, ScalarField divergenceField, const float dt)
+void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, const wField w0, ScalarField divergenceField, const float dt, const float obstacle_u, const float obstacle_v)
 {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -62,14 +91,16 @@ void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, const
     if (z == 0 || obstacles.indexSampler(index.front())) U[0] = 0.0f;
 
     if (y == 0) U[1] = INFLOW;
-    else if (obstacles.indexSampler(index.top())) U[1] = 0.0f;
+    else if (obstacles.indexSampler(index.top())) U[1] = -obstacle_v;
 
-    if (x == 0 || obstacles.indexSampler(index.left())) U[2] = 0.0f;
+    if (x == 0) U[2] = 0.0f;
+    else if (obstacles.indexSampler(index.left())) U[2] = -obstacle_u;
 
-    if (x == xRes - 1 || obstacles.indexSampler(index.right())) U[3] = 0.0f;
+    if (x == xRes - 1) U[3] = 0.0f;
+    else if (obstacles.indexSampler(index.right())) U[3] = obstacle_u;
 
     if (y == yRes - 1) U[4] = -INFLOW;
-    else if (obstacles.indexSampler(index.bottom())) U[4] = 0.0f;
+    else if (obstacles.indexSampler(index.bottom())) U[4] = obstacle_v;
 
     if (z == zRes - 1 || obstacles.indexSampler(index.back())) U[5] = 0.0f;
 
@@ -147,7 +178,7 @@ void extrapolateU_k(uField src_u, const Obstacles obstacles, uField dst_u)
         count = 0;
         if(x == 0) // 1 more line for u
         {
-            Index index_edge(xRes, y, z);
+            Index index_edge(xRes-1, y, z);
 
             if(z > 0) // front
             {
@@ -262,11 +293,11 @@ void extrapolateV_k(vField src_v, const Obstacles obstacles, vField dst_v)
         count = 0;
         if(y == 0) // 1 more line for v
         {
-            Index index_edge(x, yRes, z);
+            Index index_edge(x, yRes-1, z);
     
             if(z > 0) // front
             {
-                sum_v += src_p->operator()(x, y, z-1);
+                sum_v += src_p->operator()(x, yRes, z-1);
                 ++count;
             }
 
@@ -377,7 +408,7 @@ void extrapolateW_k(wField src_w, const Obstacles obstacles, wField dst_w)
         count = 0;
         if(z == 0) // 1 more line for w
         {
-            Index index_edge(x, y, zRes);
+            Index index_edge(x, y, zRes-1);
     
             // front
             sum_w += src_p->operator()(x, y, zRes-1);
@@ -401,7 +432,7 @@ void extrapolateW_k(wField src_w, const Obstacles obstacles, wField dst_w)
                 ++count;
             }
 
-            if(x < xRes - 1) // bottom
+            if(y < yRes - 1) // bottom
             {
                 sum_w += src_p->operator()(x, y+1, zRes);
                 ++count;
@@ -520,14 +551,14 @@ void advectU_k(const uField src_u, const vField src_v, const wField src_w, uFiel
     //----------------------------------
     // xThreadDim, yThreadDim
     //----------------------------------
-    if (z == 0) // 1 more line for u
+    if (x == 0) // 1 more line for u
     {
         // For no warp divergence, y -> x, z -> y
         pos_x = (float)xRes;
-        pos_y = (float)x + 0.5f;
-        pos_z = (float)y + 0.5f;
+        pos_y = (float)y + 0.5f;
+        pos_z = (float)z + 0.5f;
 
-        u_n = src_u(xRes, x, y);
+        u_n = src_u(xRes, y, z);
         vel_x = u_n;
         vel_y = src_v.boxSampler(pos_x, pos_y, pos_z);
         vel_z = src_w.boxSampler(pos_x, pos_y, pos_z);
@@ -547,7 +578,7 @@ void advectU_k(const uField src_u, const vField src_v, const wField src_w, uFiel
 
         u_n_hat = src_u.boxSampler(pos_x, pos_y, pos_z);
 
-        dst_u(xRes, x, y) = fma(0.5f, (u_n - u_n_hat), u_np1_hat);
+        dst_u(xRes, y, z) = fma(0.5f, (u_n - u_n_hat), u_np1_hat);
     }
     __syncthreads();
 }
@@ -594,13 +625,13 @@ void advectV_k(const uField src_u, const vField src_v, const wField src_w, vFiel
     //----------------------------------
     // xThreadDim, yThreadDim
     //----------------------------------
-    if (z == 0) // 1 more line for v
+    if (y == 0) // 1 more line for v
     {
         pos_x = (float)x + 0.5f;
         pos_y = (float)yRes;
-        pos_z = (float)y + 0.5f;
+        pos_z = (float)z + 0.5f;
 
-        v_n = src_v(x, yRes, y);
+        v_n = src_v(x, yRes, z);
         vel_x = src_u.boxSampler(pos_x, pos_y, pos_z);
         vel_y = v_n;
         vel_z = src_w.boxSampler(pos_x, pos_y, pos_z);
@@ -620,7 +651,7 @@ void advectV_k(const uField src_u, const vField src_v, const wField src_w, vFiel
 
         v_n_hat = src_v.boxSampler(pos_x, pos_y, pos_z);
 
-        dst_v(x, yRes, y) = fma(0.5f, (v_n - v_n_hat), v_np1_hat);
+        dst_v(x, yRes, z) = fma(0.5f, (v_n - v_n_hat), v_np1_hat);
     }
     __syncthreads();
 }
@@ -751,9 +782,26 @@ void Simulator::decideTimeStep()
 
 void Simulator::update()
 {
+    if(m_data->t <= ANIMATION_CHANGE_TIME)
+    {
+        m_data->obstacle_cx = COLLISION_CENTER_X;
+        m_data->obstacle_cy = COLLISION_CENTER_Y - ANIMATION_AMP * std::sin(ANIMATION_OMEGA * m_data->t);
+        m_data->obstacle_u = 0.0f;
+        m_data->obstacle_v = - ANIMATION_AMP * DX * ANIMATION_OMEGA * std::cos(ANIMATION_OMEGA * m_data->t);
+    }
+    else
+    {
+        m_data->obstacle_cx = COLLISION_CENTER_X - ANIMATION_AMP * std::sin(ANIMATION_OMEGA * m_data->t);
+        m_data->obstacle_cy = COLLISION_CENTER_Y;
+        m_data->obstacle_u = - ANIMATION_AMP * DX * ANIMATION_OMEGA * std::cos(ANIMATION_OMEGA * m_data->t);
+        m_data->obstacle_v = 0.0f;
+    }
+
+    CALL_KERNEL(resetObstacles, blocks, threads)(m_data->obstacle_cx, m_data->obstacle_cy, m_data->obstacles);
+
     CALL_KERNEL(calculateBuoyancy_k, blocks, threads)(m_data->density0, m_data->temperature0, m_data->force_y);
     CALL_KERNEL(addForces_k, blocks, threads)(m_data->force_y, m_data->v0, m_data->dt);
-    CALL_KERNEL(setRhs_k, blocks, threads)(m_data->obstacles, m_data->u0, m_data->v0, m_data->w0, m_data->divergence, m_data->dt);
+    CALL_KERNEL(setRhs_k, blocks, threads)(m_data->obstacles, m_data->u0, m_data->v0, m_data->w0, m_data->divergence, m_data->dt, m_data->obstacle_u, m_data->obstacle_v);
 
     // solve poisson equation with CG
     cg();

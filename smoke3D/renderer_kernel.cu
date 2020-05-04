@@ -5,8 +5,6 @@
 #include "renderer.cuh"
 #include "camera.h"
 
-#include <cuda_gl_interop.h>
-
 #include "helper_cuda.h"
 #include "helper_math.h"
 #include "helper_cudaVS.h"
@@ -196,7 +194,7 @@ void Renderer::assignTexture()
     cudaMemcpy3DParms parms = { 0 };
 
     parms.dstArray = cuda_density;
-    parms.srcPtr = make_cudaPitchedPtr(thrust::raw_pointer_cast(m_data->density0.data()), sizeof(float) * xRes, xRes, yRes);
+    parms.srcPtr = make_cudaPitchedPtr(thrust::raw_pointer_cast(m_data->density0.data), sizeof(float) * xRes, xRes, yRes);
     parms.extent = make_cudaExtent(xRes, yRes, zRes);
     parms.kind = cudaMemcpyDeviceToDevice;
     checkCudaErrors(cudaMemcpy3D(&parms));

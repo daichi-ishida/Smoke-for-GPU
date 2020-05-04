@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr int DIM = 256;
+constexpr int DIM = 128;
 constexpr int xRes = DIM;
 constexpr int yRes = DIM * 2;
 constexpr int zRes = DIM;
@@ -29,8 +29,8 @@ constexpr float ALPHA = 9.8f;
 constexpr float BETA = 0.004f * ALPHA;
 
 // projection
-constexpr float TOLERANCE = 1.0e-4f;
-constexpr int MAX_ITER = 1000;
+constexpr float TOLERANCE = 1.0e-3f;
+constexpr int MAX_ITER = 5000;
 
 constexpr float INIT_DENSITY = 0.1f;
 constexpr float INIT_VELOCITY = 10.0f * DX;
@@ -46,14 +46,18 @@ constexpr float COLLISION_RADIUS = (float)DIM / 6.0f;
 constexpr float COLLISION_CENTER_X = (float)xRes / 2.0f;
 constexpr float COLLISION_CENTER_Y = (float)yRes / 2.0f;
 constexpr float COLLISION_CENTER_Z = (float)zRes / 2.0f;
-
 constexpr float R2 = COLLISION_RADIUS * COLLISION_RADIUS;
+
+constexpr int ANIMATION_CHANGE_FRAME = 540;
+constexpr float ANIMATION_CHANGE_TIME = (float)ANIMATION_CHANGE_FRAME / FPS;
+constexpr float ANIMATION_AMP = (float)yRes / 6.0f;
+constexpr float ANIMATION_OMEGA = 6.28318530718f / ANIMATION_CHANGE_TIME;
 
 // Output Setting
 constexpr bool OFFSCREEN_MODE = false;
 constexpr bool SAVE_IMAGE = true;
 constexpr bool SAVE_VDB = true;
-constexpr int END_FRAME = 720;
+constexpr int END_FRAME = 900;
 
 constexpr int WIN_WIDTH = 1024;
 constexpr int WIN_HEIGHT = 1024;

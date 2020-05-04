@@ -38,11 +38,16 @@ constexpr int SOURCE_SIZE_Y = (int)(DIM / 20);
 constexpr int SOURCE_Y_MERGIN = (int)(DIM / 20);
 
 constexpr float COLLISION_RADIUS = (float)DIM / 6.0f;
-constexpr float COLLISION_CENTER_X = 2.0f * (float)xRes / 3.0f;
+constexpr float COLLISION_CENTER_X = (float)xRes / 2.0f;
 constexpr float COLLISION_CENTER_Y = (float)yRes / 2.0f;
 constexpr float R2 = COLLISION_RADIUS * COLLISION_RADIUS;
 
-constexpr int END_FRAME = 720;
+constexpr int ANIMATION_CHANGE_FRAME = 540;
+constexpr float ANIMATION_CHANGE_TIME = (float)ANIMATION_CHANGE_FRAME / FPS;
+constexpr float ANIMATION_AMP = (float)DIM / 6.0f;
+constexpr float ANIMATION_OMEGA = 6.28318530718f / ANIMATION_CHANGE_TIME;
+
+constexpr int END_FRAME = 900;
 
 constexpr int WIN_WIDTH = 1024;
 constexpr int WIN_HEIGHT = 1024;

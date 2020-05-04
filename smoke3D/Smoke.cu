@@ -334,7 +334,7 @@ void Smoke::setObstacles()
         float ry = ((static_cast<float>(j) + 0.5f) - COLLISION_CENTER_Y);
         float rz = ((static_cast<float>(k) + 0.5f) - COLLISION_CENTER_Z);
         float r2 = rx * rx + ry * ry + rz * rz;
-        h_scanline_obstacles[offset] = (r2 < R2);
+        h_scanline_obstacles[offset] = (r2 <= R2);
         // h_scanline_obstacles[offset] = false;
     }
 
