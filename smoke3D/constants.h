@@ -48,11 +48,6 @@ constexpr float COLLISION_CENTER_Y = (float)yRes / 2.0f;
 constexpr float COLLISION_CENTER_Z = (float)zRes / 2.0f;
 constexpr float R2 = COLLISION_RADIUS * COLLISION_RADIUS;
 
-constexpr int ANIMATION_CHANGE_FRAME = 540;
-constexpr float ANIMATION_CHANGE_TIME = (float)ANIMATION_CHANGE_FRAME / FPS;
-constexpr float ANIMATION_AMP = (float)yRes / 6.0f;
-constexpr float ANIMATION_OMEGA = 6.28318530718f / ANIMATION_CHANGE_TIME;
-
 // Output Setting
 constexpr bool OFFSCREEN_MODE = false;
 constexpr bool SAVE_IMAGE = true;

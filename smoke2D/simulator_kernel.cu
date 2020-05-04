@@ -12,33 +12,6 @@
 
 
 __global__
-void resetObstacles(const float cx, const float cy, Obstacles obstacles)
-{
-    int x = threadIdx.x + blockIdx.x * blockDim.x;
-    int y = threadIdx.y + blockIdx.y * blockDim.y;
-
-    float global_x = x + 0.5f;
-    float global_y = y + 0.5f;
-
-    float dx = global_x - cx;
-    float dy = global_y - cy;
-
-    float r2 = dx * dx + dy * dy;
-
-    int offset = x + y * xRes;
-    if(r2 <= R2)
-    {
-        obstacles.data[offset] = true;
-    }
-    else
-    {
-        obstacles.data[offset] = false;
-    }
-}
-
-
-
-__global__
 void calculateBuoyancy_k(const ScalarField densityField, const ScalarField temperatureField, ScalarField forceField)
 {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -67,7 +40,7 @@ void addForces_k(const ScalarField forceField, vField v, const float dt)
 }
 
 __global__
-void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, ScalarField divergenceField, const float dt, const float obstacle_u, const float obstacle_v)
+void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, ScalarField divergenceField, const float dt)
 {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -82,16 +55,14 @@ void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, Scala
     Index index(x, y);
 
     if (y == 0) U[0] = INFLOW;
-    else if (obstacles.indexSampler(index.top())) U[0] = -obstacle_v;
+    else if (obstacles.indexSampler(index.top())) U[0] = 0.0f;
 
-    if (x == 0) U[1] = 0.0f;
-    else if (obstacles.indexSampler(index.left())) U[1] = -obstacle_u;
+    if (x == 0 || obstacles.indexSampler(index.left())) U[1] = 0.0f;
 
-    if (x == xRes - 1) U[2] = 0.0f;
-    else if (obstacles.indexSampler(index.right())) U[2] = obstacle_u;
+    if (x == xRes - 1 || obstacles.indexSampler(index.right())) U[2] = 0.0f;
 
     if (y == yRes - 1) U[3] = -INFLOW;
-    else if (obstacles.indexSampler(index.bottom())) U[3] = obstacle_v;
+    else if (obstacles.indexSampler(index.bottom())) U[3] = 0.0f;
 
     float divergence = RHO * DX * (U[0] + U[1] + U[2] + U[3]) / dt;
     if (obstacles.indexSampler(index))
@@ -505,26 +476,11 @@ void Simulator::decideTimeStep()
 
 void Simulator::update()
 {
-    if(m_data->t <= ANIMATION_CHANGE_TIME)
-    {
-        m_data->obstacle_cx = COLLISION_CENTER_X;
-        m_data->obstacle_cy = COLLISION_CENTER_Y - ANIMATION_AMP * std::sin(ANIMATION_OMEGA * m_data->t);
-        m_data->obstacle_u = 0.0f;
-        m_data->obstacle_v = - ANIMATION_AMP * DX * ANIMATION_OMEGA * std::cos(ANIMATION_OMEGA * m_data->t);
-    }
-    else
-    {
-        m_data->obstacle_cx = COLLISION_CENTER_X - ANIMATION_AMP * std::sin(ANIMATION_OMEGA * m_data->t);
-        m_data->obstacle_cy = COLLISION_CENTER_Y;
-        m_data->obstacle_u = - ANIMATION_AMP * DX * ANIMATION_OMEGA * std::cos(ANIMATION_OMEGA * m_data->t);
-        m_data->obstacle_v = 0.0f;
-    }
-
     CALL_KERNEL(resetObstacles, blocks, threads)(m_data->obstacle_cx, m_data->obstacle_cy, m_data->obstacles);
 
     CALL_KERNEL(calculateBuoyancy_k, blocks, threads)(m_data->density0, m_data->temperature0, m_data->force_y);
     CALL_KERNEL(addForces_k, blocks, threads)(m_data->force_y, m_data->v0, m_data->dt);
-    CALL_KERNEL(setRhs_k, blocks, threads)(m_data->obstacles, m_data->u0, m_data->v0, m_data->divergence, m_data->dt, m_data->obstacle_u, m_data->obstacle_v);
+    CALL_KERNEL(setRhs_k, blocks, threads)(m_data->obstacles, m_data->u0, m_data->v0, m_data->divergence, m_data->dt);
 
     // solve poisson equation with CG
     cg();

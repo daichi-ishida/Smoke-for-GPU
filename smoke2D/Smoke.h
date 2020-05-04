@@ -28,11 +28,6 @@ struct Smoke
 
     Obstacles obstacles;
 
-    float obstacle_cx;
-    float obstacle_cy;
-    float obstacle_u;
-    float obstacle_v;
-
     // time step
     float dt;
     float t;
