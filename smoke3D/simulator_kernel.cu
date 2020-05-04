@@ -12,7 +12,7 @@
 
 
 __global__
-void calculateBuoyancy_k(const ScalarField densityField, const ScalarField temperatureField, ScalarField forceField)
+void calculateBuoyancy_k(ScalarField densityField, ScalarField temperatureField, ScalarField forceField)
 {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -21,8 +21,28 @@ void calculateBuoyancy_k(const ScalarField densityField, const ScalarField tempe
     float density = densityField(x, y, z);
     float temperature = temperatureField(x, y, z);
 
+    int dy = y - SOURCE_CENTER_Y;
+    int dz = z - SOURCE_CENTER_Z;
+    int d2yz = dy * dy + dz * dz;
+    if(x >= SOURCE_MARGIN_X && x < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
+    {
+        density = INIT_DENSITY;
+        temperature = INIT_TEMPERATURE;
+    }
+
+    dy = y - (yRes - SOURCE_CENTER_Y);
+    dz = z - (zRes - SOURCE_CENTER_Z);
+    d2yz = dy * dy + dz * dz;
+    if(x >= SOURCE_MARGIN_X && x < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
+    {
+        density = INIT_DENSITY;
+        temperature = INIT_COLD;
+    }
+
     float force = ALPHA * density - BETA * temperature;
 
+    densityField(x, y, z) = density;
+    temperatureField(x, y, z) = temperature;
     forceField(x, y, z) = force;
 }
 
@@ -751,8 +771,6 @@ void Simulator::decideTimeStep()
 
 void Simulator::update()
 {
-    CALL_KERNEL(resetObstacles, blocks, threads)(m_data->obstacle_cx, m_data->obstacle_cy, m_data->obstacles);
-
     CALL_KERNEL(calculateBuoyancy_k, blocks, threads)(m_data->density0, m_data->temperature0, m_data->force_y);
     CALL_KERNEL(addForces_k, blocks, threads)(m_data->force_y, m_data->v0, m_data->dt);
     CALL_KERNEL(setRhs_k, blocks, threads)(m_data->obstacles, m_data->u0, m_data->v0, m_data->w0, m_data->divergence, m_data->dt);

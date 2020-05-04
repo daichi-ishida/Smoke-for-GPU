@@ -1,8 +1,8 @@
 #pragma once
 
 constexpr int DIM = 128;
-constexpr int xRes = DIM;
-constexpr int yRes = DIM * 2;
+constexpr int xRes = DIM*2;
+constexpr int yRes = DIM;
 constexpr int zRes = DIM;
 constexpr float Scale = 1.0f;
 
@@ -34,19 +34,15 @@ constexpr int MAX_ITER = 5000;
 
 constexpr float INIT_DENSITY = 0.1f;
 constexpr float INIT_VELOCITY = 10.0f * DX;
+constexpr float INFLOW = 4.0f * DX;
 constexpr float INIT_TEMPERATURE = 30.0f;
-constexpr float INFLOW = 2.0f * DX;
+constexpr float INIT_COLD = 5.0f;
 
-constexpr int SOURCE_R = (int)(DIM / 8);
-constexpr int SOURCE_X = (int)(DIM / 2);
-constexpr int SOURCE_Y = (int)(DIM / 5);
-constexpr int SOURCE_Z = (int)(DIM / 2);
-
-constexpr float COLLISION_RADIUS = (float)DIM / 6.0f;
-constexpr float COLLISION_CENTER_X = (float)xRes / 2.0f;
-constexpr float COLLISION_CENTER_Y = (float)yRes / 2.0f;
-constexpr float COLLISION_CENTER_Z = (float)zRes / 2.0f;
-constexpr float R2 = COLLISION_RADIUS * COLLISION_RADIUS;
+constexpr int SOURCE_SIZE_X = 2*DIM/25;
+constexpr int SOURCE_MARGIN_X = 8*DIM/250;
+constexpr int SOURCE_RADIUS_YZ = DIM/20;
+constexpr int SOURCE_CENTER_Y = 9*DIM/10;
+constexpr int SOURCE_CENTER_Z = DIM/2;
 
 // Output Setting
 constexpr bool OFFSCREEN_MODE = false;
