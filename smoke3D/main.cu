@@ -45,6 +45,10 @@ int main()
             {
                 renderer->saveImage();
             }
+            if (SAVE_VDB)
+            {
+                data->saveVDB();
+            }
             data->isTimeToRender = false;
             ++frame;
         }
