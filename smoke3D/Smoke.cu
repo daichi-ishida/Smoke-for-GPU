@@ -92,7 +92,6 @@ void Smoke::addScalarFieldForVDB(openvdb::GridPtrVec& grids, std::string name, c
 
     thrust::copy_n(field.data, xRes * yRes * zRes, h_data.data());
 
-    OPENMP_FOR_COLLAPSE
     FOR_EACH_CELL
     {
         int offset = i + (j + k * yRes) * xRes;
@@ -117,8 +116,7 @@ void Smoke::addUFieldForVDB(openvdb::GridPtrVec& grids, const uField& field) con
 
     thrust::copy_n(field.data, (xRes + 1) * yRes * zRes, h_data.data());
 
-    OPENMP_FOR_COLLAPSE
-        FOR_EACH_FACE_X
+    FOR_EACH_FACE_X
     {
         int offset = i + (j + k * yRes) * (xRes + 1);
         openvdb::Coord xyz(i, yRes - 1 - j, k);
@@ -143,8 +141,7 @@ void Smoke::addVFieldForVDB(openvdb::GridPtrVec& grids, const vField& field) con
 
     thrust::copy_n(field.data, xRes * (yRes + 1) * zRes, h_data.data());
 
-    OPENMP_FOR_COLLAPSE
-        FOR_EACH_FACE_Y
+    FOR_EACH_FACE_Y
     {
         int offset = i + (j + k * (yRes+1)) * xRes;
         openvdb::Coord xyz(i, yRes - j, k);
@@ -168,8 +165,7 @@ void Smoke::addWFieldForVDB(openvdb::GridPtrVec& grids, const wField& field) con
 
     thrust::copy_n(field.data, xRes * yRes * (zRes + 1), h_data.data());
 
-    OPENMP_FOR_COLLAPSE
-        FOR_EACH_FACE_Z
+    FOR_EACH_FACE_Z
     {
         int offset = i + (j + k * yRes) * xRes;
         openvdb::Coord xyz(i, yRes - 1 - j, k);
@@ -192,6 +188,7 @@ void Smoke::saveVDB() const
 
     addScalarFieldForVDB(grids, "density", density0);
     addScalarFieldForVDB(grids, "temperature", temperature0);
+    addScalarFieldForVDB(grids, "pressure", pressure);
     addUFieldForVDB(grids, u0);
     addVFieldForVDB(grids, v0);
     addWFieldForVDB(grids, w0);
