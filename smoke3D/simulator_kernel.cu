@@ -81,15 +81,15 @@ void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, const
 
     if (z == 0 || obstacles.indexSampler(index.front())) U[0] = 0.0f;
 
-    if (y == 0) U[1] = INFLOW;
-    else if (obstacles.indexSampler(index.top())) U[1] = 0.0f;
+    if (y == 0 || obstacles.indexSampler(index.top())) U[1] = 0.0f;
 
-    if (x == 0 || obstacles.indexSampler(index.left())) U[2] = 0.0f;
+    if (x == 0) U[2] = -INFLOW;
+    else if (obstacles.indexSampler(index.left())) U[2] = 0.0f;
 
-    if (x == xRes - 1 || obstacles.indexSampler(index.right())) U[3] = 0.0f;
+    if (x == xRes - 1) U[3] = INFLOW;
+    else if (obstacles.indexSampler(index.right())) U[3] = 0.0f;
 
-    if (y == yRes - 1) U[4] = -INFLOW;
-    else if (obstacles.indexSampler(index.bottom())) U[4] = 0.0f;
+    if (y == yRes - 1 || obstacles.indexSampler(index.bottom())) U[4] = 0.0f;
 
     if (z == zRes - 1 || obstacles.indexSampler(index.back())) U[5] = 0.0f;
 

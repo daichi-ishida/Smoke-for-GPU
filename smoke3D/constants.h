@@ -33,10 +33,10 @@ constexpr float TOLERANCE = 1.0e-3f;
 constexpr int MAX_ITER = 5000;
 
 constexpr float INIT_DENSITY = 0.1f;
-constexpr float INIT_VELOCITY = 10.0f * DX;
-constexpr float INFLOW = 4.0f * DX;
-constexpr float INIT_TEMPERATURE = 30.0f;
-constexpr float INIT_COLD = 5.0f;
+constexpr float INIT_VELOCITY = ((float)DIM) * DX / 5.0f;
+constexpr float INFLOW = ((float)DIM) * DX / 8.0f;
+constexpr float INIT_TEMPERATURE = 50.0f;
+constexpr float INIT_COLD = -3.0f;
 
 constexpr int SOURCE_SIZE_X = 2*DIM/25;
 constexpr int SOURCE_MARGIN_X = 8*DIM/250;

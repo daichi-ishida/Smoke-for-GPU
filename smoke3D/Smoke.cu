@@ -229,7 +229,7 @@ void Smoke::initVelocity()
         int d2yz = dy * dy + dz * dz;
         if(i >= SOURCE_MARGIN_X && i < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
         {
-            h_u0_scanline[offset] = 2.0f * INIT_VELOCITY;
+            h_u0_scanline[offset] = 1.2f*INIT_VELOCITY;
         }
 
         dy = j - (yRes - SOURCE_CENTER_Y);
