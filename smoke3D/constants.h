@@ -29,7 +29,7 @@ constexpr float ALPHA = 9.8f;
 constexpr float BETA = 0.004f * ALPHA;
 
 // projection
-constexpr float TOLERANCE = 1.0e-3f;
+constexpr float TOLERANCE = 1.0e-4f;
 constexpr int MAX_ITER = 5000;
 
 constexpr float INIT_DENSITY = 0.1f;

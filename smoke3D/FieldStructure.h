@@ -23,11 +23,11 @@ struct Index
 
 struct Obstacles
 {
-    thrust::device_ptr<bool> data;
+    thrust::device_ptr<char> data;
 
-    __device__ bool globalSmapler(float x, float y, float z) const;
-    __host__ __device__ bool indexSampler(const int i, const int j, const int k) const;
-    __host__ __device__ bool indexSampler(const Index& index) const;
+    __device__ char globalSmapler(float x, float y, float z) const;
+    __host__ __device__ char indexSampler(const int i, const int j, const int k) const;
+    __host__ __device__ char indexSampler(const Index& index) const;
 };
 
 

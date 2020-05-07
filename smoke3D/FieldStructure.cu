@@ -82,7 +82,7 @@ Index Index::right() const
 }
 
 __device__
-bool Obstacles::globalSmapler(float x, float y, float z) const
+char Obstacles::globalSmapler(float x, float y, float z) const
 {
     x = fminf(fmaxf(0.0f, x), (float)(xRes - 1));
     y = fminf(fmaxf(0.0f, y), (float)(yRes - 1));
@@ -96,14 +96,14 @@ bool Obstacles::globalSmapler(float x, float y, float z) const
 }
 
 __host__ __device__
-bool Obstacles::indexSampler(const int i, const int j, const int k) const
+char Obstacles::indexSampler(const int i, const int j, const int k) const
 {
     return data[i + (j + k * yRes) * xRes];
 }
 
 
 __host__ __device__
-bool Obstacles::indexSampler(const Index& index) const
+char Obstacles::indexSampler(const Index& index) const
 {
     return data[index.globalOffset()];
 }

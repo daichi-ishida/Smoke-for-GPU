@@ -347,21 +347,13 @@ void Smoke::initTemperature()
 
 void Smoke::setObstacles()
 {
-    std::vector<bool> h_scanline_obstacles(xRes * yRes * zRes);
+    std::vector<char> h_scanline_obstacles(xRes * yRes * zRes);
     d_obstacles_data.resize(xRes * yRes * zRes);
 
     std::string filename = "resources/lucy_scaled_" + std::to_string(DIM) + ".sdf";
     std::ifstream fin( filename.c_str(), std::ios::in | std::ios::binary );
   
-    bool isObstacle;
-    int l = 0;
-  
-    while(!fin.eof())
-    {
-      fin.read( ( char * ) &isObstacle, sizeof( bool ) );
-      h_scanline_obstacles[l] = isObstacle;
-      ++l;
-    }
+    fin.read(h_scanline_obstacles.data(), sizeof(char) * xRes * yRes * zRes);
     fin.close();
 
     d_obstacles_data = h_scanline_obstacles;

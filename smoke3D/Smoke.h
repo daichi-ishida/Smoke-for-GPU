@@ -102,5 +102,5 @@ struct Smoke
     thrust::device_vector<float> d_direction_data;
 
     // obstacles
-    thrust::device_vector<bool> d_obstacles_data;
+    thrust::device_vector<char> d_obstacles_data;
 };

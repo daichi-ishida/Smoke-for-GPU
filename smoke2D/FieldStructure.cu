@@ -65,14 +65,14 @@ Index Index::right() const
 }
 
 __host__ __device__
-bool Obstacles::indexSampler(const int i, const int j) const
+char Obstacles::indexSampler(const int i, const int j) const
 {
     return data[i + j * xRes];
 }
 
 
 __host__ __device__
-bool Obstacles::indexSampler(const Index& index) const
+char Obstacles::indexSampler(const Index& index) const
 {
     return data[index.globalOffset()];
 }
