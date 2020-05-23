@@ -17,8 +17,8 @@ __constant__ Camera c_camera;
 __global__ void render_k(uchar3* d_output, const Obstacles obstacles)
 {
     const float tstep = 2.0f / (float)DIM;
-    float3 boxMin = make_float3(-2.0f, -1.0f, -1.0f);
-    float3 boxMax = make_float3(2.0f, 1.0f, 1.0f);
+    float3 boxMin = make_float3(-1.0f, -1.0f, -1.0f);
+    float3 boxMax = make_float3(1.0f, 1.0f, 1.0f);
     float3 albedo = make_float3(0.4f, 0.4f, 0.4f);
 
     int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -68,11 +68,11 @@ __global__ void render_k(uchar3* d_output, const Obstacles obstacles)
         float3 gridPos = convertToGridCoordinate(ray_wpos);
 
         // check intersection with obstacle
-        if (obstacles.globalSmapler(gridPos.x, gridPos.y, gridPos.z))
-        {
-            hitObstacle = true;
-            break;
-        }
+        // if (obstacles.globalSmapler(gridPos.x, gridPos.y, gridPos.z))
+        // {
+        //     hitObstacle = true;
+        //     break;
+        // }
 
         // sample density
         float density = 200.0f * tex3D(densityTex, gridPos.x, gridPos.y, gridPos.z);
@@ -149,7 +149,7 @@ void Renderer::initialize()
     d_image.resize(WIN_WIDTH * WIN_HEIGHT);
 
     printf("setting camera...");
-    host_camera = std::make_unique<Camera>(9.0f, 0.0f, M_PIf / 2.0f, 30.0f * M_PIf / 180.0f);
+    host_camera = std::make_unique<Camera>(9.0f, M_PIf / 9.0f, M_PIf / 2.0f, 30.0f * M_PIf / 180.0f);
     checkCudaErrors(cudaMemcpyToSymbol(c_camera, host_camera.get(), sizeof(Camera)));
     printf("Done\n");
 

@@ -218,40 +218,25 @@ void Smoke::initVelocity()
 
     // u
     OPENMP_FOR_COLLAPSE
-        FOR_EACH_FACE_X
+    FOR_EACH_FACE_X
     {
-        int offset = i + (j + k * yRes) * (xRes + 1);
-        int dy = j - SOURCE_CENTER_Y;
-        int dz = k - SOURCE_CENTER_Z;
-        int d2yz = dy * dy + dz * dz;
-        if(i >= SOURCE_MARGIN_X && i < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
-        {
-            h_u0_scanline[offset] = 1.2f*INIT_VELOCITY;
-        }
-
-        dy = j - (yRes - SOURCE_CENTER_Y);
-        dz = k - (zRes - SOURCE_CENTER_Z);
-        d2yz = dy * dy + dz * dz;
-        if(i >= SOURCE_MARGIN_X && i < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
-        {
-            h_u0_scanline[offset] = INIT_VELOCITY;
-        }
+        int offset = i + j * (xRes + 1) + k * (xRes + 1) * yRes;
+        h_u0_scanline[offset] = 0.0f;
     }
 
-        // v
+    // v
     OPENMP_FOR_COLLAPSE
-        FOR_EACH_FACE_Y
+    FOR_EACH_FACE_Y
     {
         int offset = i + (j + k * (yRes + 1)) * xRes;
         h_v0_scanline[offset] = 0.0f;
-        // float dx = (float)(i - SOURCE_X);
-        // float dy = (float)(j - (yRes - SOURCE_Y));
-        // float dz = (float)(k - SOURCE_Z);
-        // float r2 = dx * dx + dy * dy + dz * dz;
-        // if (r2 < (float)SOURCE_R * SOURCE_R)
-        // {
-        //     h_v0_scanline[offset] = -INIT_VELOCITY;
-        // }
+        int dx = i - SOURCE_CENTER_X;
+        int dz = k - SOURCE_CENTER_Z;
+        int d2xz = dx * dx + dz * dz;
+        if(j >= yRes - SOURCE_SIZE_Y && d2xz < SOURCE_RADIUS_XZ * SOURCE_RADIUS_XZ)
+        {
+            h_v0_scanline[offset] = INIT_VELOCITY;
+        }
     }
 
         // w
@@ -286,18 +271,10 @@ void Smoke::initDensity()
         FOR_EACH_CELL
     {
         int offset = i + (j + k * yRes) * xRes;
-        int dy = j - SOURCE_CENTER_Y;
+        int dx = i - SOURCE_CENTER_X;
         int dz = k - SOURCE_CENTER_Z;
-        int d2yz = dy * dy + dz * dz;
-        if(i >= SOURCE_MARGIN_X && i < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
-        {
-            h_density0_scanline[offset] = INIT_DENSITY;
-        }
-
-        dy = j - (yRes - SOURCE_CENTER_Y);
-        dz = k - (zRes - SOURCE_CENTER_Z);
-        d2yz = dy * dy + dz * dz;
-        if(i >= SOURCE_MARGIN_X && i < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
+        int d2xz = dx * dx + dz * dz;
+        if(j >= yRes - SOURCE_SIZE_Y && d2xz < SOURCE_RADIUS_XZ * SOURCE_RADIUS_XZ)
         {
             h_density0_scanline[offset] = INIT_DENSITY;
         }
@@ -320,22 +297,13 @@ void Smoke::initTemperature()
         FOR_EACH_CELL
     {
         int offset = i + (j + k * yRes) * xRes;
-        int dy = j - SOURCE_CENTER_Y;
+        int dx = i - SOURCE_CENTER_X;
         int dz = k - SOURCE_CENTER_Z;
-        int d2yz = dy * dy + dz * dz;
+        int d2xz = dx * dx + dz * dz;
         h_temperature0_scanline[offset] = 0.0f;
-
-        if(i >= SOURCE_MARGIN_X && i < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
+        if(j >= yRes - SOURCE_SIZE_Y && d2xz < SOURCE_RADIUS_XZ * SOURCE_RADIUS_XZ)
         {
             h_temperature0_scanline[offset] = INIT_TEMPERATURE;
-        }
-
-        dy = j - (yRes - SOURCE_CENTER_Y);
-        dz = k - (zRes - SOURCE_CENTER_Z);
-        d2yz = dy * dy + dz * dz;
-        if(i >= SOURCE_MARGIN_X && i < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
-        {
-            h_temperature0_scanline[offset] = INIT_COLD;
         }
     }
 
@@ -350,7 +318,7 @@ void Smoke::setObstacles()
     std::vector<char> h_scanline_obstacles(xRes * yRes * zRes);
     d_obstacles_data.resize(xRes * yRes * zRes);
 
-    std::string filename = "resources/lucy_scaled_" + std::to_string(DIM) + ".sdf";
+    std::string filename = "resources/fan_joint_" + std::to_string(DIM) + ".sdf";
     std::ifstream fin( filename.c_str(), std::ios::in | std::ios::binary );
   
     fin.read(h_scanline_obstacles.data(), sizeof(char) * xRes * yRes * zRes);

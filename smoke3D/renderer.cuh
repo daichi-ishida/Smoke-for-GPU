@@ -60,7 +60,7 @@ __device__ bool isInGridBox(const float3& grid_pos)
 
 __device__ float3 convertToGridCoordinate(float3 pos)
 {
-    pos += make_float3(2.0f, 1.0f, 1.0f);
+    pos += make_float3(1.0f, 1.0f, 1.0f);
     pos *= 0.5f;
     pos *= (float)DIM;
     return pos;

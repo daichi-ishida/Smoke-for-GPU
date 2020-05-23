@@ -1,7 +1,7 @@
 #pragma once
 
 constexpr int DIM = 128;
-constexpr int xRes = DIM*2;
+constexpr int xRes = DIM;
 constexpr int yRes = DIM;
 constexpr int zRes = DIM;
 constexpr float Scale = 1.0f;
@@ -36,12 +36,10 @@ constexpr float INIT_DENSITY = 0.1f;
 constexpr float INIT_VELOCITY = ((float)DIM) * DX / 5.0f;
 constexpr float INFLOW = ((float)DIM) * DX / 8.0f;
 constexpr float INIT_TEMPERATURE = 50.0f;
-constexpr float INIT_COLD = -3.0f;
 
-constexpr int SOURCE_SIZE_X = 2*DIM/25;
-constexpr int SOURCE_MARGIN_X = 8*DIM/250;
-constexpr int SOURCE_RADIUS_YZ = DIM/20;
-constexpr int SOURCE_CENTER_Y = 9*DIM/10;
+constexpr int SOURCE_SIZE_Y = 2*DIM/25;
+constexpr int SOURCE_RADIUS_XZ = DIM/4;
+constexpr int SOURCE_CENTER_X = DIM/2;
 constexpr int SOURCE_CENTER_Z = DIM/2;
 
 // Output Setting

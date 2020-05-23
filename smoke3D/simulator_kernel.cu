@@ -12,7 +12,7 @@
 
 
 __global__
-void calculateBuoyancy_k(ScalarField densityField, ScalarField temperatureField, ScalarField forceField)
+void calculateBuoyancy_k(ScalarField densityField, ScalarField temperatureField, ScalarField forceField, float t)
 {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -21,22 +21,13 @@ void calculateBuoyancy_k(ScalarField densityField, ScalarField temperatureField,
     float density = densityField(x, y, z);
     float temperature = temperatureField(x, y, z);
 
-    int dy = y - SOURCE_CENTER_Y;
+    int dx = x - SOURCE_CENTER_X;
     int dz = z - SOURCE_CENTER_Z;
-    int d2yz = dy * dy + dz * dz;
-    if(x >= SOURCE_MARGIN_X && x < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
+    int d2yz = dx * dx + dz * dz;
+    if(t < 350.0f * DT && y >= yRes - SOURCE_SIZE_Y && d2yz < SOURCE_RADIUS_XZ * SOURCE_RADIUS_XZ)
     {
         density = INIT_DENSITY;
         temperature = INIT_TEMPERATURE;
-    }
-
-    dy = y - (yRes - SOURCE_CENTER_Y);
-    dz = z - (zRes - SOURCE_CENTER_Z);
-    d2yz = dy * dy + dz * dz;
-    if(x >= SOURCE_MARGIN_X && x < SOURCE_MARGIN_X + SOURCE_SIZE_X && d2yz < SOURCE_RADIUS_YZ * SOURCE_RADIUS_YZ)
-    {
-        density = INIT_DENSITY;
-        temperature = INIT_COLD;
     }
 
     float force = ALPHA * density - BETA * temperature;
@@ -81,15 +72,15 @@ void setRhs_k(const Obstacles obstacles, const uField u0, const vField v0, const
 
     if (z == 0 || obstacles.indexSampler(index.front())) U[0] = 0.0f;
 
-    if (y == 0 || obstacles.indexSampler(index.top())) U[1] = 0.0f;
+    if (y == 0) U[1] = INFLOW;
+    else if (obstacles.indexSampler(index.top())) U[1] = 0.0f;
 
-    if (x == 0) U[2] = -INFLOW;
-    else if (obstacles.indexSampler(index.left())) U[2] = 0.0f;
+    if (x == 0 || obstacles.indexSampler(index.left())) U[2] = 0.0f;
 
-    if (x == xRes - 1) U[3] = INFLOW;
-    else if (obstacles.indexSampler(index.right())) U[3] = 0.0f;
+    if (x == xRes - 1 || obstacles.indexSampler(index.right())) U[3] = 0.0f;
 
-    if (y == yRes - 1 || obstacles.indexSampler(index.bottom())) U[4] = 0.0f;
+    if (y == yRes - 1) U[4] = -INFLOW;
+    else if (obstacles.indexSampler(index.bottom())) U[4] = 0.0f;
 
     if (z == zRes - 1 || obstacles.indexSampler(index.back())) U[5] = 0.0f;
 
@@ -771,7 +762,7 @@ void Simulator::decideTimeStep()
 
 void Simulator::update()
 {
-    CALL_KERNEL(calculateBuoyancy_k, blocks, threads)(m_data->density0, m_data->temperature0, m_data->force_y);
+    CALL_KERNEL(calculateBuoyancy_k, blocks, threads)(m_data->density0, m_data->temperature0, m_data->force_y, m_data->t);
     CALL_KERNEL(addForces_k, blocks, threads)(m_data->force_y, m_data->v0, m_data->dt);
     CALL_KERNEL(setRhs_k, blocks, threads)(m_data->obstacles, m_data->u0, m_data->v0, m_data->w0, m_data->divergence, m_data->dt);
 
