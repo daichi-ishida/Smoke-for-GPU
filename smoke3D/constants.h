@@ -34,8 +34,8 @@ constexpr int MAX_ITER = 5000;
 
 constexpr float INIT_DENSITY = 0.1f;
 constexpr float INIT_VELOCITY = ((float)DIM) * DX / 5.0f;
-constexpr float INFLOW = ((float)DIM) * DX / 8.0f;
-constexpr float INIT_TEMPERATURE = 50.0f;
+constexpr float INFLOW = ((float)DIM) * DX / 20.0f;
+constexpr float INIT_TEMPERATURE = 80.0f;
 
 constexpr int SOURCE_SIZE_Y = 2*DIM/25;
 constexpr int SOURCE_RADIUS_XZ = DIM/4;

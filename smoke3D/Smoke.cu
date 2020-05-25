@@ -318,7 +318,7 @@ void Smoke::setObstacles()
     std::vector<char> h_scanline_obstacles(xRes * yRes * zRes);
     d_obstacles_data.resize(xRes * yRes * zRes);
 
-    std::string filename = "resources/fan_joint_" + std::to_string(DIM) + ".sdf";
+    std::string filename = "resources/fan2_" + std::to_string(DIM) + ".sdf";
     std::ifstream fin( filename.c_str(), std::ios::in | std::ios::binary );
   
     fin.read(h_scanline_obstacles.data(), sizeof(char) * xRes * yRes * zRes);
