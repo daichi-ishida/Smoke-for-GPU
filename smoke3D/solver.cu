@@ -108,7 +108,8 @@ void Simulator::cg()
 
     int pressure_size = xRes * yRes * zRes;
 
-    thrust::fill(m_data->d_pressure_data.begin(), m_data->d_pressure_data.end(), 0.0f);
+    // thrust::fill(m_data->d_pressure_data.begin(), m_data->d_pressure_data.end(), 0.0f);
+    cudaMemset(thrust::raw_pointer_cast(m_data->d_pressure_data.data()), 0, sizeof(float) * pressure_size);
 
     checkCudaErrors(cublasScopy(cublasHandle, pressure_size, thrust::raw_pointer_cast(m_data->d_divergence_data.data()), 1, thrust::raw_pointer_cast(m_data->d_direction_data.data()), 1));
 

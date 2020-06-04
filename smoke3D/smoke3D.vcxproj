@@ -92,6 +92,7 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="cudaTimer.cu" />
     <CudaCompile Include="FieldStructure.cu" />
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="renderer.cu" />
@@ -114,9 +115,6 @@
     <ClInclude Include="simulator.h" />
     <ClInclude Include="Smoke.h" />
     <ClInclude Include="stb_image_write.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="cudaTimer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
