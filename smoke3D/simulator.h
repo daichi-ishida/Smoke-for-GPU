@@ -1,5 +1,6 @@
 #pragma once
 #include "Smoke.h"
+#include "cudaTimer.h"
 
 #include <memory>
 
@@ -21,6 +22,8 @@ public:
     ~Simulator() {};
 
     void update();
+    void printSimBreakdown();
+    void saveSimBreakdown();
 
 private:
     void cg();
@@ -30,4 +33,7 @@ private:
     dim3 threads;
 
     std::unique_ptr<Smoke>& m_data;
+
+    // measure calculation time
+    cudaTimer buoyancy_timer, solver_timer, advection_timer;
 };

@@ -103,6 +103,7 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="cudaTimer.h" />
     <ClInclude Include="FieldStructure.h" />
     <ClInclude Include="helper_cuda.h" />
     <ClInclude Include="helper_cudaVS.h" />
@@ -113,6 +114,9 @@
     <ClInclude Include="simulator.h" />
     <ClInclude Include="Smoke.h" />
     <ClInclude Include="stb_image_write.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cudaTimer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

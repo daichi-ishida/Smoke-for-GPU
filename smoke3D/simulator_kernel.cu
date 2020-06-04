@@ -773,11 +773,16 @@ void Simulator::update()
 {
     CALL_KERNEL(calculateBuoyancy_k, blocks, threads)(m_data->density0, m_data->temperature0, m_data->force_y);
     CALL_KERNEL(addForces_k, blocks, threads)(m_data->force_y, m_data->v0, m_data->dt);
+    buoyancy_timer.stop();
+
+    solver_timer.start();
     CALL_KERNEL(setRhs_k, blocks, threads)(m_data->obstacles, m_data->u0, m_data->v0, m_data->w0, m_data->divergence, m_data->dt);
 
     // solve poisson equation with CG
     cg();
+    solver_timer.stop();
 
+    advection_timer.start();
     CALL_KERNEL(extrapolateU_k, blocks, threads)(m_data->u0, m_data->obstacles, m_data->u);
     CALL_KERNEL(extrapolateV_k, blocks, threads)(m_data->v0, m_data->obstacles, m_data->v);
     CALL_KERNEL(extrapolateW_k, blocks, threads)(m_data->w0, m_data->obstacles, m_data->w);
@@ -791,6 +796,7 @@ void Simulator::update()
     CALL_KERNEL(advectU_k, blocks, threads)(m_data->u0, m_data->v0, m_data->w0, m_data->u, m_data->dt);
     CALL_KERNEL(advectV_k, blocks, threads)(m_data->u0, m_data->v0, m_data->w0, m_data->v, m_data->dt);
     CALL_KERNEL(advectW_k, blocks, threads)(m_data->u0, m_data->v0, m_data->w0, m_data->w, m_data->dt);
+    advection_timer.stop();
 
     m_data->density0.swap(m_data->density);
     m_data->temperature0.swap(m_data->temperature);
@@ -799,4 +805,45 @@ void Simulator::update()
     m_data->w0.swap(m_data->w);
 
     decideTimeStep();
+}
+
+void Simulator::printSimBreakdown()
+{
+    float buoyancy = buoyancy_timer.getAVG();
+    float solver = solver_timer.getAVG();
+    float advection = advection_timer.getAVG();
+
+    float total_time = buoyancy + solver + + advection;
+
+    printf("total: %f ms/step\n", total_time);
+    printf("buoyancy: %f ms/step | %f %%\n", buoyancy, 100.0f * buoyancy / total_time);
+    printf("solver: %f ms/step | %f %%\n", solver, 100.0f * solver / total_time);
+    printf("advection: %f ms/step | %f %%\n", advection, 100.0f * advection / total_time);
+
+}
+
+void Simulator::saveSimBreakdown()
+{
+    FILE* outputfile;
+
+    std::string str = "log/breakdown.txt";
+
+    outputfile = fopen(str.c_str(), "w");
+    if (outputfile == NULL)
+    {
+        printf("cannot open\n");
+        exit(1);
+    }
+    float buoyancy = buoyancy_timer.getAVG();
+    float solver = solver_timer.getAVG();
+    float advection = advection_timer.getAVG();
+
+    float total_time = buoyancy + solver + advection;
+
+    fprintf(outputfile, "total: %f ms/step\n", total_time);
+    fprintf(outputfile, "buoyancy: %f ms/step | %f %%\n", buoyancy, 100.0f * buoyancy / total_time);
+    fprintf(outputfile, "solver: %f ms/step | %f %%\n", solver, 100.0f * solver / total_time);
+    fprintf(outputfile, "advection: %f ms/step | %f %%\n", advection, 100.0f * advection / total_time);
+
+    fclose(outputfile);
 }
