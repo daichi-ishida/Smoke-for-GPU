@@ -36,6 +36,7 @@ int main()
 
         // simulation
         simulator->update();
+        simulator->printSimBreakdown();
 
         // rendering
         renderer->render();

@@ -96,6 +96,8 @@ void applyPressureGradient_k(const ScalarField pressureField, const Obstacles ob
 
 void Simulator::cg()
 {
+    std::vector<float> residuals;
+
     cublasHandle_t cublasHandle = 0;
     checkCudaErrors(cublasCreate(&cublasHandle));
 
@@ -145,6 +147,7 @@ void Simulator::cg()
 
         // check convergence L_inf norm
         relative_residual = residual_1 / residual_0;
+        residuals.push_back(relative_residual);
         if (relative_residual < TOLERANCE)
         {
             printf("SUCCESS: Convergence\n");
@@ -167,6 +170,29 @@ void Simulator::cg()
     printf("iteration        : %3d\nrelative residual: %e\n", iteration, relative_residual);
 
     checkCudaErrors(cublasDestroy(cublasHandle));
+
+    {
+        FILE* outputfile;
+
+        static int count = 0;
+        char filename[1024];
+
+        snprintf(filename, sizeof(filename), "log/residuals%03d.csv", count++);
+
+        outputfile = fopen(filename, "w");
+        if (outputfile == NULL)
+        {
+            printf("cannot open\n");
+            exit(1);
+        }
+
+        for (const auto& residual : residuals)
+        {
+            fprintf(outputfile, "%f\n", residual);
+        }
+
+        fclose(outputfile);
+    }
 
     // project out solution
     CALL_KERNEL(applyPressureGradient_k, blocks, threads)(m_data->pressure, m_data->obstacles, m_data->u0, m_data->v0, m_data->w0, m_data->dt);

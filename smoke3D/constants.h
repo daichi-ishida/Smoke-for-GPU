@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr int DIM = 128;
+constexpr int DIM = 256;
 constexpr int xRes = DIM;
 constexpr int yRes = DIM;
 constexpr int zRes = DIM;
@@ -29,7 +29,7 @@ constexpr float ALPHA = 9.8f;
 constexpr float BETA = 0.004f * ALPHA;
 
 // projection
-constexpr float TOLERANCE = 1.0e-4f;
+constexpr float TOLERANCE = 1.0e-2f;
 constexpr int MAX_ITER = 5000;
 
 constexpr float INIT_DENSITY = 0.1f;
@@ -54,8 +54,13 @@ static const char* WIN_TITLE = "Smoke with GPU 3D";
 
 #ifdef _OPENMP
 #include <omp.h>
+#ifdef _MSC_VER
 #define OPENMP_FOR __pragma("omp parallel for")
 #define OPENMP_FOR_COLLAPSE __pragma("omp parallel for collapse(3)")
+#else
+#define OPENMP_FOR _Pragma("omp parallel for")
+#define OPENMP_FOR_COLLAPSE _Pragma("omp parallel for collapse(3)")
+#endif
 #else
 #define OPENMP_FOR
 #define OPENMP_FOR_COLLAPSE
